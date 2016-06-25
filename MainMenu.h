@@ -13,7 +13,9 @@ class MainMenu : public AbstractState
     virtual void Init() override;
     virtual AbstractState* Select() override;
     virtual AbstractState* Tick() override;
+    void SetUSBConnected(bool usbConnected);
   private:
+    bool usbIsConnected;
     uint32_t lastUpdateMillis;
     void printNumbers();
 };

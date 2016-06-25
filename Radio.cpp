@@ -1,5 +1,6 @@
 #include "Radio.h"
 #include "Util.h"
+#include "LCDMachine.h"
 
 Radio::Radio(HardwareSerial* serial): 
   radioSerial(serial)
@@ -20,6 +21,8 @@ uint8_t Radio::CalculateCS(uint8_t *data, uint8_t len) {
 }
 
 void Radio::Init(const char channel[3]) {
+    LCDStates::TheBootMenu.BootState = RADIO;
+    LCDStates::TheBootMenu.Tick();
     Serial.print("Channel ");
     Serial.println(channel);
     _channel[0] = channel[0];
@@ -45,12 +48,11 @@ void Radio::Init(const char channel[3]) {
       uint32_t baudrate = 9600;
       Serial.print("Baud rate: ");
       Serial.println(baudrate);
-       delay(1000);
       
       radioSerial->begin(baudrate);
-      delay(1000);
+      delay(300);
       radioSerial->write(readSettingArray,23);
-      delay(1000);
+      delay(300);
       Serial.print("Radio read response: ");
       while(radioSerial->available())
       {  
@@ -111,6 +113,8 @@ void Radio::Init(const char channel[3]) {
         && data[13] == rf_factor 
         && data[14] == 0x00 
         && data[15] == rf_bw) {
+      LCDStates::TheBootMenu.BootState = RADIO_ALREADY_CONFIGURED;
+      LCDStates::TheBootMenu.Tick();
       Serial.println("Already configured correctly");
     } else {
       uint8_t settingsArray[] = { 0xAF, 0xAF, // sync word
@@ -133,6 +137,10 @@ void Radio::Init(const char channel[3]) {
                                 };
       settingsArray[20] = CalculateCS(settingsArray, 8 + settingsArray[7]);
       radioSerial->write(settingsArray,23);
+
+
+      LCDStates::TheBootMenu.BootState = RADIO_RECONFIGURED;
+      LCDStates::TheBootMenu.Tick();
   
       uint8_t data[23];
       int i = 0;
@@ -143,6 +151,8 @@ void Radio::Init(const char channel[3]) {
         Serial.print(" "); Serial.print(data[i-1], HEX);
       }
       Serial.println("");
+
+      
     }
 }
 

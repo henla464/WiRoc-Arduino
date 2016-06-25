@@ -33,28 +33,57 @@ void setup()
 {
   
   Serial.begin( 115200 );
-  
-  delay( 40 );
-  if (Usb.Init() == -1)
-      Serial.println("OSC did not start.");
-
-  Settings::Init();
-  outboundRadio.Init(Settings::GetOutboundChannel());
-  #ifdef IS_RELAY_MODULE
-  inboundRadio.Init(Settings::GetInboundChannel());
-  #endif
   LCDMachine::Init(&station, &outboundRadio, BUTTON_ADC_PIN, LCD_BACKLIGHT_PIN);
   LCDMachine::Tick();
-
-  delay( 400 );
+  
+  delay( 1000 );
   #ifdef IS_STATION_MODULE
-  MessageDatabase::Init(SIPunchMessageType);
+  if (Usb.Init() == -1)
+      Serial.println("OSC did not start.");
   #endif
 
-  outboundRadioMode = Settings::GetOutboundRadioMode();
-  #ifdef IS_RELAY_MODULE
-  MessageDatabase::Init(RadioMessageType);
+  Settings::Init();
 
+  // Radio
+  #ifdef IS_RELAY_MODULE
+  LCDStates::TheBootMenu.IsConfiguringInboundRadio = true;
+  inboundRadio.Init(Settings::GetInboundChannel());
+  // wait until menu state changes / select button pressed
+  while(LCDStates::TheBootMenu.BootState == RADIO_RECONFIGURED)
+  {
+     LCDMachine::Tick();
+  }
+  delay(900);
+  #endif
+  LCDStates::TheBootMenu.IsConfiguringInboundRadio = false;
+  outboundRadio.Init(Settings::GetOutboundChannel());
+  // wait until menu state changes / select button pressed
+  while(LCDStates::TheBootMenu.BootState == RADIO_RECONFIGURED)
+  {
+     LCDMachine::Tick();
+  }
+  delay(900);
+  
+  outboundRadioMode = Settings::GetOutboundRadioMode();
+
+  #ifdef IS_STATION_MODULE
+    MessageDatabase::Init(SIPunchMessageType);
+  #endif
+  #ifdef IS_RELAY_MODULE
+    MessageDatabase::Init(RadioMessageType);
+  #endif
+  Serial.println("after message db init"); 
+  if (LCDStates::TheBootMenu.BootState != SD_CARD_LOG_OPENED)
+  {
+    // wait until menu state changes / select button pressed
+    while(LCDMachine::CurrentMenu == &LCDStates::TheBootMenu)
+    {
+      LCDMachine::Tick();
+    }
+  }
+  delay(1500);
+
+  #ifdef IS_RELAY_MODULE
   inboundRadioMode = Settings::GetInboundRadioMode();
   if (inboundRadioMode == P2M_RETRY) //P2M retry
   {
@@ -63,15 +92,15 @@ void setup()
   }
   #endif
   
-  Serial.println("after message db init"); 
-  delay( 200 );
-
   Timer3.initialize(1000000); // initialize timer1
   Timer3.attachInterrupt(Battery::UpdateBattery);  
 
 
   attachInterrupt(digitalPinToInterrupt(OUTBOUND_AUX_PIN), TimeSlotManager::RadioMessageAvailable, FALLING);
   delay(10);
+
+  
+  LCDMachine::SetState(&LCDStates::TheMainMenu);
 }
 
 #ifdef IS_RELAY_MODULE
@@ -93,12 +122,15 @@ void radioMessageAvailable()
 }
 
 bool alreadyInitialized = false;
-bool siStationDetached = false;
+bool siStationDetached = true;
 
 void loop()
 {
     LCDMachine::Tick();
+    HandleSDReadWriteError();
+    HandleRadioConfigurationChanged();
     GetAckAndDeleteAckedMessages();
+    
     #ifdef IS_STATION_MODULE
     Usb.Task();
     uint8_t state = Usb.getUsbTaskState();
@@ -114,6 +146,7 @@ void loop()
       }
       case USB_STATE_ERROR:
       {
+         LCDMachine::ShowSplash("USB Error");
          Serial.println("usb state error");
          Usb.setUsbTaskState(USB_DETACHED_SUBSTATE_INITIALIZE);
          
@@ -123,6 +156,12 @@ void loop()
       }
       case USB_DETACHED_SUBSTATE_WAIT_FOR_DEVICE:
       {
+        if (!siStationDetached)
+        {
+          LCDMachine::ShowSplash("USB Removed");
+          LCDStates::TheMainMenu.SetUSBConnected(false);
+          //delay(1000);
+        }
         siStationDetached = true;
         break;
       }
@@ -133,6 +172,7 @@ void loop()
           if (Usb.Init() == -1) {
             Serial.println("OSC did not start.");
           } else {
+            LCDMachine::ShowSplash("USB Attached");
             siStationDetached = false;
             Serial.println("Usb init");
             delay(400);
@@ -150,7 +190,6 @@ void loop()
     
     #ifdef IS_RELAY_MODULE
     GetInboundRadioMessageToDB();
-    
     if (inboundRadioMode == P2P_RETRY) //P2P retry
     {
        // send simple ack
@@ -161,10 +200,44 @@ void loop()
        }
     }
     #endif
-    
     //Serial.println("SendOutboundRadioMessages");
     SendOutboundRadioMessages();
 }
+
+void HandleSDReadWriteError()
+{
+    if (MessageDatabase::SDReadWriteError)
+    {
+      Serial.println("erase db");
+      MessageDatabase::EraseDB();
+      Serial.println("create db");
+      MessageDatabase::CreateDB();
+    }
+}
+
+
+void HandleRadioConfigurationChanged()
+{
+    if (Settings::OutboundChannelChanged)
+    {
+      LCDMachine::SetState(&LCDStates::TheBootMenu);
+      outboundRadio.Init(Settings::GetOutboundChannel());
+      Settings::OutboundChannelChanged = false;
+      delay(1000);
+      LCDMachine::SetState(&LCDStates::TheMainMenu);
+    } 
+    #ifdef IS_RELAY_MODULE
+    else if (Settings::InboundChannelChanged)
+    {
+      LCDMachine::SetState(&LCDStates::TheBootMenu);
+      inboundRadio.Init(Settings::GetInboundChannel());
+      Settings::InboundChannelChanged = false;
+      delay(1000);
+      LCDMachine::SetState(&LCDStates::TheMainMenu);
+    }
+    #endif
+}
+
 
 void PrintTimeSlotMessage(RadioMessage *timeSlotRadioMessage)
 {

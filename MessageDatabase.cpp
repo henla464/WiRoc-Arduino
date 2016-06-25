@@ -1,6 +1,7 @@
 #include "MessageDatabase.h"
 #include "ModuleDefs.h"
 #include "Settings.h"
+#include "LCDStates.h"
 
 void DatabaseMessage::SaveToFile(String desc, File file) 
 {
@@ -83,29 +84,34 @@ uint32_t MessageDatabase::LastSICardNumber = 0;
 uint8_t MessageDatabase::LastMessageNumber = 0;
 uint8_t MessageDatabase::LastFromNode = 0;
 uint8_t MessageDatabase::ReceiveCount = 0;
+bool MessageDatabase::SDReadWriteError = false;
 
 void MessageDatabase::Init(enum EventType Type)
 {
+   
   pinMode(4, OUTPUT); // chip select for SD, rerouted to pin 10
   pinMode(53, OUTPUT); // hardware SS pin for SD, not used but must be left as output
 
   if (!SD.begin(4)) {
+    LCDStates::TheBootMenu.BootState = SD_CARD_FAILED;
+    LCDStates::TheBootMenu.Tick();
     Serial.println("SD initialization failed");
     return;
+  } else {
+     LCDStates::TheBootMenu.BootState = SD_CARD;
+     LCDStates::TheBootMenu.Tick();
   }
   Serial.println("SD initialization done.");
-  uint32_t totalSize = 0;
-  dbFile = SD.open("database.db", FILE_WRITE);
-  
-  totalSize += dbFile.size();
-  if (totalSize == 0) 
+  if (CreateDB())
   {
-    db.create(0, TABLE_SIZE, sizeof(DatabaseMessage));
-  } 
-  else
-  {
-    db.open(0);
+    LCDStates::TheBootMenu.BootState = SD_CARD_DB_CREATED;
+    LCDStates::TheBootMenu.Tick();
+  } else {
+    LCDStates::TheBootMenu.BootState = SD_CARD_DB_OPENED;
+    LCDStates::TheBootMenu.Tick();
   }
+  uint32_t totalSize = dbFile.size();
+  delay(800);
 
   uint8_t logFileNumberToUse = 255;
   char logFileNameToUse[10];
@@ -164,6 +170,9 @@ void MessageDatabase::Init(enum EventType Type)
   Serial.print("Opened ");
   Serial.println(logFileNameToUse);
   logFile = SD.open(logFileNameToUse, FILE_WRITE);
+  LCDStates::TheBootMenu.BootState = SD_CARD_LOG_OPENED;
+  LCDStates::TheBootMenu.LogFileName = logFileNameToUse;
+  LCDStates::TheBootMenu.Tick();
 }
 
 void MessageDatabase::GetLogFileName(uint8_t fileNo, char * fileNameCharArray)
@@ -187,40 +196,79 @@ bool MessageDatabase::DoesDBExist()
   return SD.exists("database.db");
 }
 
+bool MessageDatabase::CreateDB()
+{
+  SDReadWriteError = false;
+  dbFile = SD.open("database.db", FILE_WRITE);
+  if (dbFile.size() == 0) 
+  {
+    db.create(0, TABLE_SIZE, sizeof(DatabaseMessage));
+    return true;
+  } 
+  else
+  {
+    if (db.open(0, TABLE_SIZE, sizeof(DatabaseMessage)) == EDB_CORRUPT)
+    {
+      EraseDB();
+      dbFile = SD.open("database.db", FILE_WRITE);
+      db.create(0, TABLE_SIZE, sizeof(DatabaseMessage));
+      return true;
+    }   
+    return false;
+  }  
+}
 
 void MessageDatabase::Writer(unsigned long address, uint8_t data)
 {
-  //delay(1);
+  if (SDReadWriteError) { return; }
+  uint8_t errorCount = 0;
   while (!dbFile.seek(address))
   {
-    //uint32_t fileSize;
-    //fileSize = dbFile.size();
     Serial.print("!seek address: "); Serial.println(address, HEX); 
-    //Serial.print(" file size: "); Serial.print(fileSize, HEX);
     delay(1);
+    errorCount++;
+    if (errorCount == 255)
+    {
+      LCDMachine::ShowSplash("Error seeking SD");
+      SDReadWriteError = true;
+      return;
+    }
   }
-  //Serial.print(" write address: "); Serial.print(address); Serial.print(" data "); Serial.print(data); Serial.print(" size "); Serial.print(dbFile.size());
   while (!dbFile.write(data))
   {
     Serial.println("MessageDatabase::Writer write error");
     dbFile.seek(address);
     delay(1);
+    errorCount++;
+    if (errorCount == 255)
+    {
+      LCDMachine::ShowSplash("Error writing SD");
+      SDReadWriteError = true;
+      return;
+    }
   }
   dbFile.flush();
-  //Serial.print(" size after "); Serial.print(dbFile.size()); 
 }
 
 uint8_t MessageDatabase::Reader(unsigned long address)
 {
+  if (SDReadWriteError) { return 0x00; }
+  uint8_t errorCount = 0;
   while (!dbFile.seek(address))
   {
     uint32_t fileSize;
     fileSize = dbFile.size();
     Serial.print("!seek address: "); Serial.print(address, HEX); Serial.print(" file size: "); Serial.print(fileSize, HEX);
-    delay(100);
+    delay(1);
+    errorCount++;
+    if (errorCount == 255)
+    {
+      LCDMachine::ShowSplash("Error reading SD");
+      SDReadWriteError = true;
+      return 0x00;
+    }
   }
   uint8_t data = dbFile.read(); 
-  //Serial.print(" read address: "); Serial.print(address); Serial.print(" data "); Serial.print(data);
   return data;
 }
 
@@ -284,6 +332,12 @@ int16_t MessageDatabase::GetDBMessage(DatabaseMessage *dbMsg, uint8_t numberFrom
   //Serial.print("cnt: "); Serial.println(cnt);
   if (cnt-numberFromEnd <= 0)
   {
+    return -1;
+  }
+
+  if (cnt > 1000) {
+    // Records should always get deleted normally, if it is bigger than this it might
+    // be a corruption error
     return -1;
   }
   if (db.readRec(cnt-numberFromEnd, (byte*) dbMsg) == EDB_OK)

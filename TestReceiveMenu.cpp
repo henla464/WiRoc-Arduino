@@ -26,16 +26,20 @@ AbstractState* TestReceiveMenu::Tick()
 void TestReceiveMenu::printMenu()
 {
   lcd.setCursor(0,0);
-  lcd.print("Cnt:");
+  lcd.print("Cnt:     ");
+  lcd.setCursor(4,0);
   lcd.print(MessageDatabase::ReceiveCount);
   lcd.setCursor(9,0);
-  lcd.print("Msg:");
+  lcd.print("Msg:     ");
+  lcd.setCursor(13,0);
   lcd.print(MessageDatabase::LastMessageNumber);
   lcd.setCursor(0,1);
-  lcd.print("C no:");
+  lcd.print("Crd:    ");
+  lcd.setCursor(4,1);
   lcd.print(MessageDatabase::LastSICardNumber);
-  lcd.setCursor(9,1);
-  lcd.print("From:");
+  lcd.setCursor(11,1);
+  lcd.print("Fr:    ");
+  lcd.setCursor(14,1);
   lcd.print(MessageDatabase::LastFromNode);
 
 }

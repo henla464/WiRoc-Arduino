@@ -18,4 +18,5 @@ AddNodeMenu LCDStates::TheAddNodeMenu;
 OutboundRadioModeMenu LCDStates::TheOutboundRadioModeMenu;
 InboundRadioModeMenu LCDStates::TheInboundRadioModeMenu;
 EraseDBMenu LCDStates::TheEraseDBMenu;
+BootMenu LCDStates::TheBootMenu;
 

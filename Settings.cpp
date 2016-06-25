@@ -6,6 +6,8 @@
 
 struct NodeSettings Settings::settings;
 struct HWSettings Settings::hwSettings;
+bool Settings::InboundChannelChanged = false;
+bool Settings::OutboundChannelChanged = false;
 
 uint32_t Settings::RadioTotalSlotLengthMicroSeconds[] = {5800000, 5800000, 5800000, 5800000, 5800000, 5800000};
 
@@ -41,6 +43,7 @@ void Settings::SetOutboundChannel(char channel[3])
   settings.OutboundChannel[1] = channel[1];
   settings.OutboundChannel[2] = channel[2];
   SaveSettings();
+  OutboundChannelChanged = true;
 }
 
 void Settings::SetInboundChannel(char channel[3])
@@ -49,6 +52,7 @@ void Settings::SetInboundChannel(char channel[3])
   settings.InboundChannel[1] = channel[1];
   settings.InboundChannel[2] = channel[2];
   SaveSettings();
+  InboundChannelChanged = true;
 }
 
 void Settings::SetInboundRadioMode(uint8_t radioModeIndex)

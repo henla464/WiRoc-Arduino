@@ -21,6 +21,8 @@ class Settings
 {
   public:
     static uint32_t RadioTotalSlotLengthMicroSeconds[];
+    static bool InboundChannelChanged;
+    static bool OutboundChannelChanged;
     static void Init();
     static uint32_t GetOutboundRadioTotalSlotLengthMicroSeconds();
     static uint32_t GetInboundRadioTotalSlotLengthMicroSeconds();

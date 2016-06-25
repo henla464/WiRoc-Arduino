@@ -8,11 +8,11 @@ class SplashMenu : public AbstractState
 {
   public:
     SplashMenu();
-    void Init(String text, bool returnToNodeMenu);
+    void Init(String text, AbstractState* returnToMenu);
     virtual void Init() override;
     virtual AbstractState* Tick() override;
+    AbstractState* rtnToMenu;
   private:
-    bool returnToNodeMenu;
     String text;
 };
 

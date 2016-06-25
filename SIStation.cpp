@@ -1,5 +1,6 @@
 #include "SIStation.h"
 #include "Util.h"
+#include "LCDMachine.h"
 
 uint8_t CP210xAsync::OnInit(CP210x *cp210x)
 {
@@ -89,6 +90,8 @@ void SIStation::Init() {
     
     if (IsCorrectMSModeDirectResponse(rcvd-i, buf+i)) {
       Serial.println("38400 kbit/s works");
+      LCDMachine::ShowSplash("SI Initialized");
+      LCDStates::TheMainMenu.SetUSBConnected(true);
       return;
     }
       
@@ -108,7 +111,8 @@ void SIStation::Init() {
       Serial.println("4800 kbit/s works");
       return;
     }
-    
+
+    LCDMachine::ShowSplash("SI Init Failed");
     Serial.print("Could not communicate with master station");
 }
 

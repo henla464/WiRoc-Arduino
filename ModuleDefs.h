@@ -1,5 +1,5 @@
-#define IS_STATION_MODULE
-//#define IS_RELAY_MODULE
+//#define IS_STATION_MODULE
+#define IS_RELAY_MODULE
 
 // SI punch message
 #define STX 0x02

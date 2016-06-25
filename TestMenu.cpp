@@ -7,7 +7,7 @@ TestMenu::TestMenu() : AbstractState()
   firstRowIndex = 0;
 }
 
-char TestMenu::TestMenuItems[][15] {{"Send in slot"},{"Force send"},{"Receive"}};
+char TestMenu::TestMenuItems[][16] {{"Add to database"},{"Send to radio"},{"Receive"}};
 
 
 void TestMenu::Init()

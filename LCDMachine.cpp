@@ -27,11 +27,7 @@ void LCDMachine::Init(SIStation *station, Radio *outboundRadio, uint8_t buttonPi
    TurnBacklightOn();
   
    AbstractState::lcd.begin(16,2);
-//   lcd.setCursor( 0, 0 );                    //top left
-//   lcd.print( "  INITIALIZING  " );          //Print some initial text to the LCD.
-//   lcd.setCursor( 0, 1 );                    //bottom left
-//   lcd.print( "  ------------  " );
-   CurrentMenu = (AbstractState*)&LCDStates::TheMainMenu;
+   CurrentMenu = (AbstractState*)&LCDStates::TheBootMenu;
    CurrentMenu->Init();
 }
 
@@ -43,6 +39,33 @@ void LCDMachine::TurnBacklightOn()
 void LCDMachine::TurnBacklightOff()
 {
   pinMode( BacklightPin, OUTPUT );     // INPUT == ON, OUTPUT == OFF
+}
+
+void LCDMachine::ShowSplash(String txt, AbstractState* returnToMenu)
+{
+  if (returnToMenu == NULL)
+  {
+    if (CurrentMenu == &LCDStates::TheSplashMenu)
+    {
+      LCDStates::TheSplashMenu.Init(txt, LCDStates::TheSplashMenu.rtnToMenu);
+    } else
+    {
+      LCDStates::TheSplashMenu.Init(txt, CurrentMenu);
+    }
+  } else {
+    LCDStates::TheSplashMenu.Init(txt, returnToMenu);  
+  }
+  CurrentMenu = &LCDStates::TheSplashMenu;
+  CurrentMenu->Init();
+}
+
+void LCDMachine::SetState(AbstractState *newMenu)
+{
+  CurrentMenu = newMenu;
+  CurrentMenu->Init();
+  CurrentMenu->Tick();
+  millisLastTick = millis();
+  Serial.println("set state");
 }
 
 void LCDMachine::Tick()
@@ -63,11 +86,13 @@ void LCDMachine::Tick()
   }
 
   
+  
   uint8_t button = ReadButtons();
 
   AbstractState* newState = NULL;
   if (CurrentMenu) 
   {
+    Serial.println("tick");
     newState = CurrentMenu->Tick();
   }
    //show text label for the button pressed

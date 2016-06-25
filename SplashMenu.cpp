@@ -2,24 +2,22 @@
 #include "LCDStates.h"
 #include "ModuleDefs.h"
 
-//bool SplashMenu::returnToNodeMenu;
-//String SplashMenu::text;
-
 SplashMenu::SplashMenu() : AbstractState()
 {
 }
 
-void SplashMenu::Init(String textToDisplay, bool shouldReturnToNodeMenu)
+void SplashMenu::Init(String textToDisplay, AbstractState* returnToMenu)
 {
   text = textToDisplay;
-  returnToNodeMenu = shouldReturnToNodeMenu;
+  rtnToMenu = returnToMenu;
 }
 
 void SplashMenu::Init()
 {
-  millisAtInit = millis();
+  AbstractState::Init();
   ClearScreen();
-  lcd.setCursor(3,0);
+  uint8_t startPosition = max(0, 7-text.length()/2);
+  lcd.setCursor(startPosition,0);
   lcd.print(text);
 }
 
@@ -27,6 +25,8 @@ AbstractState* SplashMenu::Tick()
 {
     if (millis()-millisAtInit > 1500)
     {
+      return rtnToMenu;
+      /*
       if (returnToNodeMenu) 
       {
         return (AbstractState*)&LCDStates::TheInboundRadioNodeMenu;
@@ -34,7 +34,7 @@ AbstractState* SplashMenu::Tick()
       else
       {
         return (AbstractState*)&LCDStates::TheSettingsMenu;
-      }
+      }*/
     }
     return NULL;  
 }

@@ -21,7 +21,7 @@ class TestMenu : public AbstractState
     AbstractState* GetSelected();
     uint8_t cursorIndex;
     uint8_t firstRowIndex;
-    static char TestMenuItems[][15];
+    static char TestMenuItems[][16];
 };
 
 #endif // __TestMenu_H__

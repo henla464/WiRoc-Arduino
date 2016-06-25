@@ -32,6 +32,9 @@ class LCDMachine
     static AbstractState* CurrentMenu;
     static void Init(SIStation *station, Radio *outboundRadio, uint8_t buttonPin, uint8_t backlightPin);
     static void Tick();
+    //static void ShowSplash(String txt);
+    static void ShowSplash(String txt, AbstractState* returnToMenu = NULL);
+    static void SetState(AbstractState *newMenu);
     static SIStation *Station;
     static Radio *OutboundRadio;
     static uint8_t ButtonPin;

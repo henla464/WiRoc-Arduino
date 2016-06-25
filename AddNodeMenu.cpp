@@ -40,11 +40,11 @@ AbstractState* AddNodeMenu::Select()
   resetTime();
   if (LCDStates::TheInboundRadioNodeMenu.AddNode(nodeNumber))
   {
-    LCDStates::TheSplashMenu.Init("Added", true);  
+    LCDStates::TheSplashMenu.Init("Added", &LCDStates::TheInboundRadioNodeMenu);  
   }
   else
   {
-    LCDStates::TheSplashMenu.Init("Node exists", true);  
+    LCDStates::TheSplashMenu.Init("Node exists", &LCDStates::TheInboundRadioNodeMenu);  
   }
   return (AbstractState*)&LCDStates::TheSplashMenu;    
 }

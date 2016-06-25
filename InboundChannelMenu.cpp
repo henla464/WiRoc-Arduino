@@ -43,7 +43,7 @@ void InboundChannelMenu::initChannelIndex()
 
 void InboundChannelMenu::printChannel()
 {
-  lcd.setCursor(12,0);
+  lcd.setCursor(14,0);
   lcd.print(Radio::Channels[channelIndex]);
 }
 

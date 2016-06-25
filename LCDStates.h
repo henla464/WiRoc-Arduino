@@ -19,6 +19,7 @@
 #include "OutboundRadioModeMenu.h"
 #include "InboundRadioModeMenu.h"
 #include "EraseDBMenu.h"
+#include "BootMenu.h"
 
 class LCDStates {
     public:
@@ -40,6 +41,7 @@ class LCDStates {
         static OutboundRadioModeMenu TheOutboundRadioModeMenu;
         static InboundRadioModeMenu TheInboundRadioModeMenu;
         static EraseDBMenu TheEraseDBMenu;
+        static BootMenu TheBootMenu;
 };
 
 #endif // __LCDStates_H__

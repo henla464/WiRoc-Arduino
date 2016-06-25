@@ -35,6 +35,7 @@ class MessageDatabase
     static void Init(enum EventType Type);
     static bool EraseDB();
     static bool DoesDBExist();
+    static bool CreateDB();
     static void SaveSIPunchMessage(SIPunchMessage *siMessage);
     static int16_t GetSIPunchMessage(SIPunchMessage *siMessage);
     static void SetSentByMessageNumber(uint8_t messageNumber);
@@ -53,6 +54,7 @@ class MessageDatabase
     static uint8_t LastMessageNumber;
     static uint8_t LastFromNode;
     static uint8_t ReceiveCount;
+    static bool SDReadWriteError;
   private:
     static File dbFile;
     static File logFile;

@@ -87,7 +87,7 @@ AbstractState* InboundRadioNodeMenu::Select()
       nodes[i] = nodes[i+1];
     }
     numberOfNodes--;
-    LCDStates::TheSplashMenu.Init("Removed", true);
+    LCDStates::TheSplashMenu.Init("Removed", &LCDStates::TheInboundRadioNodeMenu);
     return (AbstractState*)&LCDStates::TheSplashMenu;
   } else if (cursorIndex == numberOfNodes)
   {
@@ -98,14 +98,14 @@ AbstractState* InboundRadioNodeMenu::Select()
     } 
     else 
     {
-      LCDStates::TheSplashMenu.Init("List full", true);
+      LCDStates::TheSplashMenu.Init("List full", &LCDStates::TheInboundRadioNodeMenu);
       return (AbstractState*)&LCDStates::TheSplashMenu;
     }
     
   } else if (cursorIndex == numberOfNodes+1)
   {
     Settings::SetInboundRadioNodes(nodes, numberOfNodes);
-    LCDStates::TheSplashMenu.Init("Saved", true);
+    LCDStates::TheSplashMenu.Init("Saved", &LCDStates::TheInboundRadioNodeMenu);
     return (AbstractState*)&LCDStates::TheSplashMenu;
   }
   return NULL;

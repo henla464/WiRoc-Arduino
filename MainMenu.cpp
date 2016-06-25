@@ -12,16 +12,24 @@ void MainMenu::Init()
    ClearScreen();
    lcd.setCursor(0,0);
    #ifdef IS_STATION_MODULE
-     lcd.print("Control");
+   lcd.print("Control");
+   lcd.setCursor(7,0);
+   if (usbIsConnected) {
+     lcd.print(" -> ");
+   } else {
+     lcd.print(" !! ");
+   }
    #else 
      char* inboundChannel = Settings::GetInboundChannel();
      lcd.print("CH:");
      lcd.print(inboundChannel);
+     lcd.setCursor(7,0);
+     lcd.print(" -> ");
    #endif
    
    char* outboundChannel = Settings::GetOutboundChannel();
-   lcd.setCursor(7,0);
-   lcd.print(" -> CH:");
+   lcd.setCursor(11,0);
+   lcd.print("CH:");
    lcd.print(outboundChannel);
 
    lcd.setCursor(0,1);
@@ -32,6 +40,10 @@ void MainMenu::Init()
    printNumbers();
 }
 
+void MainMenu::SetUSBConnected(bool usbConnected)
+{
+  usbIsConnected = usbConnected;
+}
 
 void MainMenu::printNumbers()
 {
